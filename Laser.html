@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - Forbidden Designs</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Three.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- Three.js Post-processing -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/UnrealBloomShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script> 
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #040810;
+            color: #E0E0E0;
+            overflow-x: hidden;
+            /* Placeholder for intricate background circuitry */
+            background-image: radial-gradient(circle at center, rgba(14, 30, 60, 0.5) 0%, transparent 60%),
+                              url('https://placehold.co/100x100/040810/040810?text=.'); /* Repeating dot pattern */
+            background-size: 100% 100%, 100px 100px;
+            background-repeat: no-repeat, repeat;
+            background-attachment: fixed;
+        }
+
+        .font-orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+        
+        /* The main glowing border - REMOVED */
+        /*
+        .main-border {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 96vw;
+            height: 96vh;
+            border: 2px solid transparent;
+            border-radius: 2rem;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5), 0 0 30px rgba(255, 0, 255, 0.4);
+            pointer-events: none;
+            z-index: 50;
+        }
+        */
+
+        /* Glitchy/RGB text effect for "ABOUT US" */
+        .text-glitch {
+            text-transform: uppercase;
+            font-weight: 900;
+            letter-spacing: 0.1em;
+            animation: glitch-anim 5s infinite alternate;
+            text-shadow: 
+                0 0 5px #00ffff,
+                0 0 10px #00ffff,
+                0 0 20px #00ffff,
+                0 0 40px #87CEFA, /* Changed from #ff00ff */
+                0 0 80px #87CEFA; /* Changed from #ff00ff */
+        }
+
+        @keyframes glitch-anim {
+            0% {
+                text-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff, 0 0 20px #00ffff, 0 0 40px #87CEFA, 0 0 80px #87CEFA;
+            }
+            100% {
+                text-shadow: 0 0 5px #87CEFA, 0 0 10px #87CEFA, 0 0 20px #87CEFA, 0 0 40px #00ffff, 0 0 80px #00ffff;
+            }
+        }
+
+        /* Hexagon shape for team members */
+        .hexagon {
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            transition: transform 0.3s ease, filter 0.3s ease;
+        }
+        .hexagon:hover {
+            transform: scale(1.05);
+            filter: drop-shadow(0 0 15px rgba(0, 255, 255, 0.7));
+        }
+        
+        /* Container for the 3D visualization */
+        #three-canvas-container {
+            position: absolute;
+            top: 25%; /* Position it between header and team */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            height: 400px; /* Height for the canvas */
+            z-index: 10;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="w-full min-h-screen p-8 md:p-16">
+
+    <!-- <div class="main-border"></div> -->
+    
+    <div id="three-canvas-container">
+        <canvas id="three-canvas"></canvas>
+    </div>
+
+    <div class="relative z-20 flex flex-col items-center justify-between min-h-[90vh] max-w-7xl mx-auto">
+        
+        <!-- Header Section -->
+        <header class="text-center w-full">
+            <div class="text-gray-500 text-sm tracking-widest font-orbitron">
+                <span>DESIGN_V3</span>
+                <span class="text-gray-700 mx-2">|</span>
+                <span>ABOUT PAGE</span>
+                <span class="text-gray-700 mx-2">|</span>
+                <span>RGB_CONCEPT</span>
+            </div>
+            <h1 class="text-6xl md:text-8xl font-orbitron text-glitch mt-4">
+                ABOUT US
+            </h1>
+        </header>
+
+        <!-- Main Content Section -->
+        <section class="w-full md:w-2/5 text-center md:text-left md:self-start mt-24 md:mt-32">
+            <p class="text-lg md:text-xl leading-relaxed">
+                WE ARE THE ARCHITECTS OF THE UNCONVENTIONAL, FORGING DESIGNS FROM THE FORBIDDEN IMAGINATION. OUR JOURNEY IS ONE BREAKING BOUNDARIES AND SHAPING TOMORROWS UNSEEN.
+            </p>
+            <button class="font-orbitron text-sm uppercase tracking-widest text-cyan-400 px-6 py-3 mt-8 bg-cyan-900/30 hover:bg-cyan-900/80 hover:shadow-lg hover:shadow-cyan-500/30 transition-all duration-300">
+                <span class="mr-2">→</span> EXPLORE DESIGNS
+            </button>
+        </section>
+
+        <!-- Team Section -->
+        <footer class="w-full flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16 mt-24 md:mt-16">
+            
+            <!-- Icon 1 -->
+            <div class="text-center">
+                <div class="hexagon w-24 h-28 md:w-32 md:h-36 bg-gray-900/50 flex items-center justify-center">
+                    <!-- Placeholder for abstract icon -->
+                    <svg class="w-12 h-12 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                </div>
+            </div>
+
+            <!-- Team Member 1 -->
+            <div class="text-center">
+                <div class="hexagon w-24 h-28 md:w-32 md:h-36 bg-gray-900/50 overflow-hidden">
+                    <img src="https://placehold.co/150x170/0A101F/00FFFF?text=?" alt="Visionary" class="w-full h-full object-cover grayscale filter brightness-75">
+                </div>
+                <h3 class="font-orbitron mt-4 uppercase tracking-widest">Visionaries</h3>
+            </div>
+            
+            <!-- Team Member 2 -->
+            <div class="text-center">
+                <div class="hexagon w-24 h-28 md:w-32 md:h-36 bg-gray-900/50 overflow-hidden">
+                    <img src="https://placehold.co/150x170/0A101F/00FF00?text=?" alt="Engineer" class="w-full h-full object-cover grayscale filter brightness-75">
+                </div>
+                <h3 class="font-orbitron mt-4 uppercase tracking-widest">Engineers</h3>
+            </div>
+
+            <!-- Team Member 3 -->
+            <div class="text-center">
+                <div class="hexagon w-24 h-28 md:w-32 md:h-36 bg-gray-900/50 overflow-hidden">
+                    <img src="https://placehold.co/150x170/0A101F/0000FF?text=?" alt="Artisan" class="w-full h-full object-cover grayscale filter brightness-75">
+                </div>
+                <h3 class="font-orbitron mt-4 uppercase tracking-widest">Artisans</h3>
+            </div>
+
+            <!-- Icon 2 -->
+            <div class="text-center">
+                <div class="hexagon w-24 h-28 md:w-32 md:h-36 bg-gray-900/50 flex items-center justify-center">
+                    <!-- Placeholder for abstract icon 2 -->
+                    <svg class="w-12 h-12 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                </div>
+            </div>
+
+        </footer>
+
+    </div>
+
+    <script>
+        let scene, camera, renderer, composer;
+        const objects = [];
+
+        function initThreeJS() {
+            const container = document.getElementById('three-canvas-container');
+            const canvas = document.getElementById('three-canvas');
+            if (!canvas || !container) return;
+
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            // 1. Scene Setup
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+            renderer.setSize(width, height);
+            renderer.setPixelRatio(window.devicePixelRatio); 
+
+            // 2. Create Nested Wireframe Cubes
+            const techSkyBlue = 0x00ffff; // Tech Sky Blue color
+            const colors = [techSkyBlue, techSkyBlue, techSkyBlue, techSkyBlue]; // Use only this color
+            for (let i = 0; i < 4; i++) {
+                const geometry = new THREE.BoxGeometry(2 + i * 0.5, 2 + i * 0.5, 2 + i * 0.5);
+                const wireframe = new THREE.WireframeGeometry(geometry);
+                const material = new THREE.LineBasicMaterial({ 
+                    color: colors[i],
+                    linewidth: 1, /* Changed from 2 */
+                    transparent: true,
+                    opacity: 0.8 /* Changed from 0.6 */
+                });
+                const cube = new THREE.LineSegments(wireframe, material);
+                cube.rotation.x = Math.random() * Math.PI;
+                cube.rotation.y = Math.random() * Math.PI;
+                scene.add(cube);
+                objects.push({ obj: cube, speed: (Math.random() - 0.5) * 0.01 });
+            }
+
+            // 3. Create Radiating Laser Lines
+            const lineCount = 50;
+            /* REMOVED
+            const lineMaterial = new THREE.LineBasicMaterial({ 
+                color: 0xffffff, 
+                transparent: true,
+                opacity: 0.7
+            });
+            */
+            for (let i = 0; i < lineCount; i++) {
+                // NEW: Create material inside the loop
+                const lineMaterial = new THREE.LineBasicMaterial({ 
+                    color: techSkyBlue, // Use only Tech Sky Blue
+                    linewidth: 1,
+                    transparent: true,
+                    opacity: 0.5 // Changed from 0.7
+                });
+
+                const points = [];
+                const start = new THREE.Vector3(0, 0, 0);
+                const end = new THREE.Vector3(
+                    (Math.random() - 0.5) * 20,
+                    (Math.random() - 0.5) * 20,
+                    (Math.random() - 0.5) * 20
+                );
+                points.push(start);
+                points.push(end);
+                
+                const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                const line = new THREE.Line(geometry, lineMaterial); // Use new random color material
+                scene.add(line);
+                objects.push({ obj: line, speed: (Math.random() - 0.5) * 0.005 });
+            }
+
+            camera.position.z = 8;
+
+            // 4. Post-processing (Bloom)
+            composer = new THREE.EffectComposer(renderer);
+            composer.addPass(new THREE.RenderPass(scene, camera));
+
+            const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(width, height), 1.5, 0.4, 0.85);
+            bloomPass.threshold = 0;
+            bloomPass.strength = 2.0; // Intense glow
+            bloomPass.radius = 0.5;
+            composer.addPass(bloomPass);
+
+            composer.addPass(new THREE.ShaderPass(THREE.CopyShader));
+
+            // Start animation
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            objects.forEach(item => {
+                item.obj.rotation.x += item.speed;
+                item.obj.rotation.y += item.speed * 0.8;
+                item.obj.rotation.z += item.speed * 0.5;
+            });
+
+            if (composer) {
+                composer.render();
+            } else {
+                renderer.render(scene, camera);
+            }
+        }
+        
+        function onWindowResize() {
+            const container = document.getElementById('three-canvas-container');
+            if (container && camera && renderer && composer) {
+                const width = container.clientWidth;
+                const height = container.clientHeight;
+
+                camera.aspect = width / height;
+                camera.updateProjectionMatrix();
+                renderer.setSize(width, height);
+                composer.setSize(width, height);
+            }
+        }
+
+        // Initialize
+        window.onload = function() {
+            initThreeJS();
+            window.addEventListener('resize', onWindowResize);
+            console.log("About Us page initialized.");
+        };
+    </script>
+</body>
+</html>
+
+
+
+

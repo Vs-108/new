@@ -1,0 +1,398 @@
+<!-- Chosen Palette: Cosmic Dusk (Deep Navy/Black background, Neon Cyan/Magenta accents, Off-White Text) -->
+<!-- Application Structure Plan: The structure is a "Conceptual Dashboard" focusing on immersive exploration. It uses a three-panel grid layout on desktop: 1) Left Panel for Navigation (Service List), 2) Center Panel for the Key Visual/Interactive Diagram (HTML/CSS-based "Cube" selector), and 3) Right Panel for Dynamic Detail View (Textual content and KPI-like summaries). On mobile, this collapses into a vertical stack with Navigation, Visual, and Details. This structure was chosen because the report's core content is 4 separate, distinct concepts; a selection model (click a service, see its details) offers maximum clarity and ease of synthesis. -->
+<!-- Visualization & Content Choices: Summary: 4 Conceptual Services -> Goal -> Viz/Presentation Method -> Interaction -> Justification -> Library/Method. 1. Service List -> Organize -> Clickable list (HTML) -> Click to filter main details -> Clarity and access -> Vanilla JS. 2. Conceptual Cube Diagram -> Engage/Organize -> HTML/CSS Interactive 3D Cube Diagram (no real 3D library needed, using perspective/transform) -> Hover for highlight, Click to select -> Funnel attention, link visual to data -> HTML/CSS/JS. 3. Service Details (Text) -> Inform -> Dynamic Text Block -> Click on service list/cube -> Clarity -> Vanilla JS. 4. Metrics (Risk/Cost) -> Compare/Inform -> Dynamic Mini-Gauge (HTML/CSS) and Bar Chart (Chart.js) -> Update on service selection -> Quantify conceptual difference -> Chart.js/Vanilla JS. CONFIRMING: NO SVG graphics used. NO Mermaid JS used. -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conceptual Services Interface</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        .neon-glow-cyan {
+            text-shadow: 0 0 5px #00FFFF, 0 0 10px #00FFFF;
+        }
+        .card-bg {
+            background-color: rgba(10, 20, 40, 0.75);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+        }
+        .cube-piece {
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(255, 0, 255, 0.1);
+        }
+        .cube-piece:hover, .cube-piece.active {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(255, 0, 255, 0.6), 0 0 30px rgba(255, 0, 255, 0.3);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 250px;
+            max-height: 300px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 300px;
+            }
+        }
+        /* Simulated 3D Cube using CSS Transforms */
+        .cube-container {
+            width: 100%;
+            padding-top: 100%; /* Aspect ratio trick */
+            position: relative;
+        }
+        .cube-wrapper {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            perspective: 1200px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .cube {
+            width: 300px; height: 300px;
+            position: relative;
+            transform-style: preserve-3d;
+            transform: rotateX(30deg) rotateY(45deg);
+            animation: rotateCube 30s infinite linear;
+        }
+        .cube-piece {
+            position: absolute;
+            width: 150px; height: 150px;
+            background-color: rgba(50, 50, 100, 0.8);
+            border: 1px solid #00FFFF;
+        }
+        /* Positioning the 4 visible faces of the puzzle */
+        .piece-1 { transform: rotateY(0deg) translateZ(75px) translateX(-75px) translateY(-75px); }
+        .piece-2 { transform: rotateY(90deg) translateZ(75px) translateX(75px) translateY(-75px); }
+        .piece-3 { transform: rotateX(-90deg) translateZ(75px) translateX(-75px) translateY(75px); }
+        .piece-4 { transform: rotateX(-90deg) translateZ(75px) translateX(75px) translateY(-75px); }
+        .piece-5 { transform: rotateX(0deg) translateZ(75px) translateX(75px) translateY(75px); }
+        .piece-6 { transform: rotateY(90deg) translateZ(75px) translateX(-75px) translateY(75px); }
+        
+        .piece-top-1 { transform: rotateX(90deg) translateZ(75px) translateX(-75px) translateY(-75px); }
+        .piece-top-2 { transform: rotateX(90deg) translateZ(75px) translateX(75px) translateY(-75px); }
+
+        @keyframes rotateCube {
+            from { transform: rotateX(30deg) rotateY(45deg); }
+            to { transform: rotateX(30deg) rotateY(405deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen font-mono p-4" style="background-image: url('https://placehold.co/1920x1080/0A1020/FFFFFF?text=NEBULA+BACKGROUND'); background-size: cover;">
+
+    <header class="container mx-auto py-4 mb-8">
+        <div class="flex justify-between items-center border-b border-cyan-700 pb-2">
+            <h1 class="text-4xl font-bold neon-glow-cyan tracking-widest">
+                SYNTHESIS INTERFACE
+            </h1>
+            <nav class="hidden md:flex space-x-6 text-sm">
+                <a href="#" class="hover:text-cyan-400 transition">OVERVIEW</a>
+                <a href="#" class="hover:text-cyan-400 transition">FRAMEWORKS</a>
+                <a href="#" class="hover:text-cyan-400 transition">DISCLAIMER</a>
+                <button class="text-white hover:text-cyan-400 transition text-lg">&#x1F50D;</button>
+            </nav>
+        </div>
+        <p class="text-xl text-gray-400 mt-2 tracking-wider">
+            Deconstructing Conceptual Services: Core Mechanics & Risk Assessment
+        </p>
+    </header>
+
+    <main class="container mx-auto">
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- 1. Left Panel: Navigation & State -->
+            <section class="lg:col-span-1 p-4 rounded-xl card-bg h-full">
+                <h2 class="text-2xl font-semibold mb-4 text-cyan-400 border-b border-cyan-700 pb-2">
+                    SERVICE ARCHIVES
+                </h2>
+                <p class="text-sm text-gray-400 mb-4">
+                    Select a service below or click a cube component to load its operational analysis and risk profile.
+                </p>
+                <div id="service-list" class="space-y-3">
+                    <!-- Dynamic Service Buttons -->
+                </div>
+            </section>
+
+            <!-- 2. Center Panel: Thematic Visualizer -->
+            <section class="lg:col-span-1 flex flex-col items-center justify-center p-4 rounded-xl card-bg h-[500px] md:h-full">
+                <h2 class="text-2xl font-semibold mb-4 text-cyan-400 border-b border-cyan-700 pb-2 w-full text-center">
+                    CONCEPTUAL MECHANICS
+                </h2>
+                <div class="cube-container">
+                    <div class="cube-wrapper">
+                        <div class="cube" id="interactive-cube">
+                            <!-- 8 pieces for a 2x2x2 cube, only the visible 4 will be interactive and named -->
+                            <div class="cube-piece piece-1 hover:z-20" data-service-id="0"></div>
+                            <div class="cube-piece piece-2 hover:z-20" data-service-id="1"></div>
+                            <div class="cube-piece piece-top-1 hover:z-20" data-service-id="2"></div>
+                            <div class="cube-piece piece-top-2 hover:z-20" data-service-id="3"></div>
+
+                            <!-- Non-interactive/supporting pieces -->
+                            <div class="cube-piece piece-3 opacity-50" style="border-color: rgba(255, 0, 255, 0.2);"></div>
+                            <div class="cube-piece piece-4 opacity-50" style="border-color: rgba(255, 0, 255, 0.2);"></div>
+                            <div class="cube-piece piece-5 opacity-50" style="border-color: rgba(255, 0, 255, 0.2);"></div>
+                            <div class="cube-piece piece-6 opacity-50" style="border-color: rgba(255, 0, 255, 0.2);"></div>
+                        </div>
+                    </div>
+                </div>
+                <p id="cube-status" class="text-sm text-gray-500 mt-4 h-5">Click a piece for analysis.</p>
+            </section>
+
+            <!-- 3. Right Panel: Dynamic Details & Visualizations -->
+            <section class="lg:col-span-1 p-4 rounded-xl card-bg h-full">
+                <h2 id="detail-title" class="text-2xl font-semibold mb-4 text-magenta-400 border-b border-magenta-700 pb-2">
+                    Select a Service to Begin Analysis
+                </h2>
+
+                <!-- Introductory Paragraph -->
+                <p id="detail-intro" class="text-sm text-gray-300 mb-6">
+                    This section provides a deep-dive into the selected conceptual service, translating complex operational frameworks into understandable metrics and qualitative narratives. Use the data visualizations below to compare key risks and resource allocation profiles.
+                </p>
+
+                <!-- Core Textual Findings -->
+                <div class="space-y-4 mb-8">
+                    <div class="p-3 border-l-4 border-cyan-500 bg-gray-800/50 rounded">
+                        <h3 class="text-lg font-medium text-cyan-300">CORE FUNCTION:</h3>
+                        <p id="detail-function" class="text-gray-200 text-sm italic">Functionality details will appear here...</p>
+                    </div>
+                    <div class="p-3 border-l-4 border-magenta-500 bg-gray-800/50 rounded">
+                        <h3 class="text-lg font-medium text-magenta-300">QUALITATIVE FINDINGS:</h3>
+                        <p id="detail-findings" class="text-gray-200 text-sm">Key qualitative findings will appear here...</p>
+                    </div>
+                </div>
+
+                <!-- Chart Containers for Quantitative Data -->
+                <div class="border-t border-gray-700 pt-6 space-y-8">
+                    <h3 class="text-xl font-semibold text-gray-200">RISK & RESOURCE PROFILE</h3>
+
+                    <!-- Chart 1: Resource Allocation (Bar Chart) -->
+                    <div class="chart-container">
+                        <p class="text-center text-sm text-gray-400 mb-2">Resource Allocation Breakdown</p>
+                        <canvas id="resourceChart"></canvas>
+                    </div>
+
+                    <!-- Chart 2: Risk Gauge (Doughnut Chart) -->
+                    <div class="chart-container">
+                        <p class="text-center text-sm text-gray-400 mb-2">Operational Risk Level</p>
+                        <canvas id="riskChart"></canvas>
+                    </div>
+
+                </div>
+
+            </section>
+        </div>
+    </main>
+
+    <script>
+        const API_DATA = [
+            {
+                id: 0,
+                name: "FORBIDDEN INCUSCULPTS",
+                function: "High-dimensional material synthesis and reverse-engineered non-Euclidean geometry structures. Focuses on stabilization of exotic matter streams.",
+                findings: "Initial tests show extreme stability in closed-loop systems, but a 40% chance of system corruption upon external entropy introduction. Scalability is limited by current processing cores.",
+                resources: [60, 20, 20], // Compute, Energy, Personnel
+                risk: 75,
+                color: 'rgb(255, 99, 132)'
+            },
+            {
+                id: 1,
+                name: "CYBERNETIC CHIMERAS",
+                function: "Fusion of organic neural networks with sentient machine learning modules. Creates self-optimizing, adaptive decision agents for complex environments.",
+                findings: "The primary success metric is adaptation rate (98% in 72 hours). The primary failure point is maintaining ethical drift control; requires constant human oversight.",
+                resources: [30, 50, 20], // Compute, Energy, Personnel
+                risk: 55,
+                color: 'rgb(54, 162, 235)'
+            },
+            {
+                id: 2,
+                name: "QUANTUM ARCHITECTURES",
+                function: "Non-local data synchronization across distributed entanglement networks. Provides instantaneous, immutable ledgering for classified data transmission.",
+                findings: "Perfect data integrity is confirmed (0% loss). However, the architecture is highly susceptible to temporal displacement events; a failsafe protocol is mandatory.",
+                resources: [10, 40, 50], // Compute, Energy, Personnel
+                risk: 25,
+                color: 'rgb(255, 205, 86)'
+            },
+            {
+                id: 3,
+                name: "VOID FORGE PROTOTYPES",
+                function: "Iterative creation of new physics-defying propulsion systems by exploiting controlled Casimir vacuum fluctuations.",
+                findings: "Achieved 120% theoretical maximum thrust in a shielded environment. The long-term impact on local spacetime is currently unquantifiable but potentially catastrophic.",
+                resources: [40, 30, 30], // Compute, Energy, Personnel
+                risk: 90,
+                color: 'rgb(75, 192, 192)'
+            }
+        ];
+
+        let resourceChartInstance = null;
+        let riskChartInstance = null;
+        let activeServiceId = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeLayout();
+            renderCharts();
+            // Automatically load the first service for initial view
+            updateDetails(API_DATA[0]);
+        });
+
+        function initializeLayout() {
+            const listContainer = document.getElementById('service-list');
+            API_DATA.forEach(data => {
+                const button = document.createElement('button');
+                button.className = `w-full text-left p-3 rounded-lg transition duration-300 transform hover:scale-[1.02] border-2 border-transparent focus:outline-none`;
+                button.innerHTML = `<span class="text-lg font-semibold block">${data.name}</span><span class="text-xs text-gray-500">ID: ${data.id}</span>`;
+                button.setAttribute('data-service-id', data.id);
+                button.addEventListener('click', () => updateDetails(data));
+                listContainer.appendChild(button);
+            });
+
+            document.querySelectorAll('.cube-piece').forEach(piece => {
+                piece.addEventListener('click', function() {
+                    const id = parseInt(this.getAttribute('data-service-id'));
+                    const data = API_DATA.find(d => d.id === id);
+                    if (data) {
+                        updateDetails(data);
+                    }
+                });
+            });
+        }
+
+        function updateDetails(data) {
+            activeServiceId = data.id;
+
+            // Update Text Details
+            document.getElementById('detail-title').textContent = data.name;
+            document.getElementById('detail-function').textContent = data.function;
+            document.getElementById('detail-findings').textContent = data.findings;
+
+            // Highlight List Button and Cube Piece
+            document.querySelectorAll('#service-list button').forEach(btn => {
+                btn.classList.remove('bg-cyan-600', 'text-white', 'neon-glow-cyan', 'border-cyan-400');
+                btn.classList.add('bg-gray-800', 'text-gray-300', 'border-transparent');
+                if (parseInt(btn.getAttribute('data-service-id')) === data.id) {
+                    btn.classList.add('bg-cyan-600', 'text-white', 'neon-glow-cyan', 'border-cyan-400');
+                    btn.classList.remove('bg-gray-800', 'text-gray-300');
+                }
+            });
+
+            document.querySelectorAll('.cube-piece').forEach(piece => {
+                piece.classList.remove('active');
+                if (parseInt(piece.getAttribute('data-service-id')) === data.id) {
+                    piece.classList.add('active');
+                }
+            });
+
+            // Update Charts
+            updateResourceChart(data.resources, data.color);
+            updateRiskChart(data.risk, data.color);
+        }
+
+        function renderCharts() {
+            const resourceCtx = document.getElementById('resourceChart').getContext('2d');
+            resourceChartInstance = new Chart(resourceCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Compute Power (G-ops)', 'Energy Output (MW-h)', 'Personnel (FTE)'],
+                    datasets: [{
+                        label: 'Resource Allocation %',
+                        data: [0, 0, 0],
+                        backgroundColor: ['#00FFFF', '#FF00FF', '#FFFF00'],
+                        borderColor: '#00FFFF',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { color: 'gray' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        x: {
+                            ticks: {
+                                color: 'gray',
+                                callback: function(value, index, values) {
+                                    const label = this.getLabelForValue(value);
+                                    if (label.length > 16 && window.innerWidth < 768) {
+                                        return label.split(' ').join('\n');
+                                    }
+                                    return label;
+                                }
+                            },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(10, 20, 40, 0.9)',
+                            titleColor: '#00FFFF',
+                            bodyColor: '#FFFFFF',
+                            borderColor: '#00FFFF',
+                            borderWidth: 1
+                        }
+                    }
+                }
+            });
+
+            const riskCtx = document.getElementById('riskChart').getContext('2d');
+            riskChartInstance = new Chart(riskCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Operational Risk', 'Mitigation Success'],
+                    datasets: [{
+                        data: [0, 100],
+                        backgroundColor: ['#FF00FF', 'rgba(255, 255, 255, 0.1)'],
+                        borderColor: 'rgba(255, 255, 255, 0.2)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '80%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += context.parsed + '%';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateResourceChart(data, color) {
+            resourceChartInstance.data.datasets[0].data = data;
+            resourceChartInstance.data.datasets[0].backgroundColor = [color, 'rgba(54, 162, 235, 0.6)', 'rgba(255, 205, 86, 0.6)'];
+            resourceChartInstance.update();
+        }
+
+        function updateRiskChart(risk, color) {
+            const riskData = [risk, 100 - risk];
+            riskChartInstance.data.datasets[0].data = riskData;
+            riskChartInstance.data.datasets[0].backgroundColor = [color, 'rgba(255, 255, 255, 0.1)'];
+            riskChartInstance.update();
+        }
+    </script>
+</body>
+</html>

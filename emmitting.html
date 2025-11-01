@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Neural Orb - Refined</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: linear-gradient(180deg, #0b0f1c 0%, #111a2e 100%);
+            color: white;
+            font-family: 'Inter', sans-serif;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+</head>
+<body>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+        // --- Core Variables ---
+        let scene, camera, renderer, composer, bloomPass;
+        let controls;
+        let brainGroup, curves = [], particles; // MODIFIED: Renamed 'filaments' to 'curves', removed 'nodes'
+        let pulses = []; // <-- ADD THIS: Array for traveling neurons
+        const clock = new THREE.Clock();
+        const mouse = new THREE.Vector2();
+        let targetRotation = new THREE.Vector2();
+        let bloomSurge = 0;
+        const baseBloomParams = {
+            strength: 1.5, // Increased base strength for more overall glow
+            radius: 0.6,   // Increased radius for diffused glow
+            threshold: 0.1,
+        };
+
+        // --- Config ---
+        const FILAMENT_COUNT = 100; // Increased filament count for more density
+        const FILAMENT_POINTS = 20; // More points for smoother, more complex curves
+        const FILAMENT_RADIUS_MIN = 0.02; // Min thickness
+        const FILAMENT_RADIUS_MAX = 0.04; // Max thickness, subtle variation
+        const NODES_PER_FILAMENT = 4; // More nodes per filament
+        const NODE_RADIUS = 0.1; // Slightly larger nodes
+        const PARTICLE_COUNT = 7000; // More particles
+        const ORB_RADIUS = 5;
+
+        // --- Initialization ---
+        function init() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x0b0f1c, 0.08);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.z = 15;
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.outputEncoding = THREE.sRGBEncoding;
+            document.body.appendChild(renderer.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0x4040ff, 0.3);
+            scene.add(ambientLight);
+            
+            const centerLight = new THREE.PointLight(0xffaa44, 2.0, 25); // Brighter central light
+            scene.add(centerLight);
+
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = 0.3;
+            controls.enableZoom = true;
+            controls.minDistance = 8;
+            controls.maxDistance = 25;
+
+            brainGroup = new THREE.Group();
+            scene.add(brainGroup);
+
+            createCurves(); // MODIFIED: Renamed from createFilaments
+            createPulses(); // <-- ADD THIS: Call the new function
+            // createNodes(); // REMOVED
+            createParticles();
+
+            setupPostprocessing();
+
+            window.addEventListener('resize', onWindowResize);
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mousedown', onInteraction);
+            document.addEventListener('wheel', onInteraction, { passive: true });
+        }
+
+        // --- Object Creation ---
+
+        function createCurves() { // MODIFIED: Renamed from createFilaments
+            // REMOVED: filamentMaterial
+
+            for (let i = 0; i < FILAMENT_COUNT; i++) {
+                const points = [];
+                // More dynamic starting points within a wider range for less perfect sphere
+                const startPoint = randomPointInSphere(ORB_RADIUS * (0.6 + Math.random() * 0.4));
+                
+                for (let j = 0; j < FILAMENT_POINTS; j++) {
+                    const t = j / (FILAMENT_POINTS - 1);
+                    const point = new THREE.Vector3()
+                        .lerpVectors(startPoint, new THREE.Vector3(0,0,0), t * 0.5) // Pull towards center less aggressively
+                        .add(randomPointInSphere(ORB_RADIUS * 0.6 * (1 - t))) // More deviation along the path
+                        .add(randomPointInSphere(ORB_RADIUS * 0.4)); // Stronger overall randomness
+                    points.push(point);
+                }
+                
+                const curve = new THREE.CatmullRomCurve3(points);
+                
+                curves.push(curve); // MODIFIED: Only save the curve, not a mesh
+
+                // REMOVED: All code for TubeGeometry, colors, and filament mesh
+            }
+        }
+
+        // --- ADD THIS NEW FUNCTION ---
+        // Creates the traveling "neuron" pulses
+        function createPulses() {
+            const pulseGeometry = new THREE.SphereGeometry(NODE_RADIUS * 1.1, 12, 12); // Slightly larger than static nodes to be visible
+            const pulseMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff }); // White-hot for max bloom
+            const PULSE_COUNT = Math.floor(curves.length / 2); // MODIFIED: Use 'curves.length'
+
+            for (let i = 0; i < PULSE_COUNT; i++) {
+                const pulse = new THREE.Mesh(pulseGeometry, pulseMaterial);
+                
+                // Assign a curve from an existing filament
+                pulse.userData.curve = curves[i * 2]; // MODIFIED: Get curve from 'curves' array
+                pulse.userData.t = Math.random(); // Start at a random point
+                pulse.userData.speed = 0.03 + Math.random() * 0.04; // Give a random slow speed
+                
+                pulse.scale.set(0, 0, 0); // Start invisible
+                
+                pulses.push(pulse);
+                brainGroup.add(pulse);
+            }
+        }
+        // --- END OF NEW FUNCTION ---
+
+        // REMOVED: The entire 'createNodes' function
+        /*
+        function createNodes() {
+            ...
+        }
+        */
+
+        function createParticles() {
+            const geometry = new THREE.BufferGeometry();
+            const positions = [];
+            const velocities = [];
+
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                const pos = randomPointInSphere(ORB_RADIUS + 2);
+                positions.push(pos.x, pos.y, pos.z);
+                
+                const vel = new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.015, // Slightly faster particles
+                    (Math.random() - 0.5) * 0.015,
+                    (Math.random() - 0.5) * 0.015
+                );
+                velocities.push(vel.x, vel.y, vel.z);
+            }
+
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            geometry.setAttribute('velocity', new THREE.Float32BufferAttribute(velocities, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: 0.03, // Slightly larger particles
+                color: 0xffffff,
+                blending: THREE.AdditiveBlending,
+                transparent: true,
+                opacity: 0.8, // Slightly more opaque
+                sizeAttenuation: true
+            });
+
+            particles = new THREE.Points(geometry, material);
+            brainGroup.add(particles);
+        }
+
+        // --- Postprocessing Setup ---
+        function setupPostprocessing() {
+            composer = new EffectComposer(renderer);
+            composer.addPass(new RenderPass(scene, camera));
+
+            bloomPass = new UnrealBloomPass(
+                new THREE.Vector2(window.innerWidth, window.innerHeight),
+                baseBloomParams.strength,
+                baseBloomParams.radius,
+                baseBloomParams.threshold
+            );
+            composer.addPass(bloomPass);
+        }
+        
+        // --- Helper Functions ---
+        function randomPointInSphere(radius) {
+            const u = Math.random();
+            const v = Math.random();
+            const theta = 2 * Math.PI * u;
+            const phi = Math.acos(2 * v - 1);
+            const r = Math.cbrt(Math.random()) * radius;
+            return new THREE.Vector3(
+                r * Math.sin(phi) * Math.cos(theta),
+                r * Math.sin(phi) * Math.sin(theta),
+                r * Math.cos(phi)
+            );
+        }
+
+        // --- Event Handlers ---
+        function onWindowResize() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+
+            renderer.setSize(width, height);
+            composer.setSize(width, height);
+        }
+
+        function onMouseMove(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        }
+
+        function onInteraction() {
+            bloomSurge = 1.0;
+        }
+
+        // --- ADD THIS NEW FUNCTION ---
+        // Animates the traveling pulses
+        function animatePulses(deltaTime) {
+            pulses.forEach(pulse => {
+                // Advance the pulse's position along the curve
+                pulse.userData.t += pulse.userData.speed * deltaTime;
+                
+                // Loop back to the start
+                if (pulse.userData.t > 1) {
+                    pulse.userData.t -= 1.0;
+                }
+
+                const t = pulse.userData.t;
+                
+                // Get the new position from the curve
+                pulse.position.copy(pulse.userData.curve.getPointAt(t));
+
+                // "Glow and lit slowly"
+                // Use sin(t * PI) which is 0 at t=0, 1 at t=0.5, and 0 at t=1
+                // This makes the pulse fade in and fade out as it travels.
+                const scale = Math.sin(t * Math.PI);
+                pulse.scale.set(scale, scale, scale);
+            });
+        }
+        // --- END OF NEW FUNCTION ---
+
+        // --- Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const elapsedTime = clock.getElapsedTime();
+            const deltaTime = clock.getDelta(); // Get time since last frame
+            
+            animatePulses(deltaTime); // <-- ADD THIS: Animate the pulses
+
+            // 1. Parallax mouse movement
+            targetRotation.x = mouse.y * 0.2;
+            targetRotation.y = mouse.x * 0.2;
+            brainGroup.rotation.x += (targetRotation.x - brainGroup.rotation.x) * 0.05;
+            brainGroup.rotation.y += (targetRotation.y - brainGroup.rotation.y) * 0.05;
+
+            // REMOVED: Section 2 (Filament organic movement)
+            
+            // REMOVED: Section 3 (Node pulsing)
+
+            // 2. Particle movement (Re-numbered)
+            const positions = particles.geometry.attributes.position.array;
+            const velocities = particles.geometry.attributes.velocity.array;
+            const boundary = ORB_RADIUS + 3; // Larger boundary for particles
+            
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                const i3 = i * 3;
+                positions[i3] += velocities[i3];
+                positions[i3 + 1] += velocities[i3 + 1];
+                positions[i3 + 2] += velocities[i3 + 2];
+
+                const x = positions[i3];
+                const y = positions[i3 + 1];
+                const z = positions[i3 + 2];
+                
+                if (x*x + y*y + z*z > boundary * boundary) {
+                    const newPos = randomPointInSphere(boundary * 0.7);
+                    positions[i3] = newPos.x;
+                    positions[i3 + 1] = newPos.y;
+                    positions[i3 + 2] = newPos.z;
+                }
+            }
+            particles.geometry.attributes.position.needsUpdate = true;
+            
+            // 3. Particle flicker (Re-numbered)
+            particles.material.opacity = 0.6 + Math.sin(elapsedTime * 6.0) * 0.3; // More noticeable flicker
+
+            // 4. Bloom surge decay (Re-numbered)
+            if (bloomSurge > 0.005) { // Decay threshold
+                bloomSurge *= 0.90; // Faster decay
+            } else {
+                bloomSurge = 0;
+            }
+            bloomPass.strength = baseBloomParams.strength + bloomSurge;
+
+            controls.update();
+            composer.render(scene, camera);
+        }
+
+        // --- Start ---
+        init();
+        animate();
+    </script>
+</body>
+</html>
+
+

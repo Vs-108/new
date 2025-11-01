@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Puzzle Cube Showcase</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Exo+2:wght@300;400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --glow-color: #00ffff; /* Cyan glow */
+            --text-color-primary: #e0e0e0;
+            --font-exo2: 'Exo 2', sans-serif;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: var(--font-exo2);
+            background: #000;
+            color: var(--text-color-primary);
+        }
+
+        /* This container holds the 3D canvas */
+        #container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* This overlay is now empty, but kept in case UI is added later */
+        #ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none; /* Allows mouse events to pass through to the canvas */
+        }
+
+    </style>
+</head>
+<body>
+    
+    <!-- 3D Canvas Container -->
+    <div id="container"></div>
+
+    <!-- 2D UI Overlay (Empty) -->
+    <div id="ui-overlay">
+        <!-- All panel elements have been removed -->
+    </div>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js"
+        }
+      }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        
+        class World {
+            constructor() {
+                this.container = document.getElementById('container');
+                this.scene = new THREE.Scene();
+                this.camera = new THREE.PerspectiveCamera(
+                    75, 
+                    window.innerWidth / window.innerHeight, 
+                    0.1, 
+                    1000
+                );
+                // Move camera back a bit to see the larger puzzle cube
+                this.camera.position.z = 7; 
+
+                this.renderer = new THREE.WebGLRenderer({
+                    antialias: true,
+                    alpha: true 
+                });
+                this.clock = new THREE.Clock();
+                
+                this.mouse = new THREE.Vector2();
+                
+                this.cube = null; // Will hold the puzzle cube GROUP
+                
+                this.init();
+            }
+
+            init() {
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                this.container.appendChild(this.renderer.domElement);
+
+                this.addLights();
+                this.addBackground();
+                this.addPuzzleCube(); // Add the multi-piece puzzle cube
+                
+                this.addEventListeners();
+                
+                this.renderer.setAnimationLoop(this.animate.bind(this));
+            }
+
+            addLights() {
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+                this.scene.add(ambientLight);
+
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
+                directionalLight.position.set(5, 5, 5);
+                this.scene.add(directionalLight);
+            }
+
+            addBackground() {
+                // Using a CubeTextureLoader for a more immersive nebula background
+                const cubeTextureLoader = new THREE.CubeTextureLoader();
+                const backgroundTexture = cubeTextureLoader.load([
+                    'https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/textures/cube/Bridge2/px.jpg', // right
+                    'https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/textures/cube/Bridge2/nx.jpg', // left
+                    'https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/textures/cube/Bridge2/py.jpg', // top
+                    'https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/textures/cube/Bridge2/ny.jpg', // bottom
+                    'https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/textures/cube/Bridge2/pz.jpg', // back
+                    'https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/textures/cube/Bridge2/nz.jpg'  // front
+                ]);
+                this.scene.background = backgroundTexture;
+                this.scene.environment = backgroundTexture; 
+            }
+
+            /**
+             * Creates a 3x3x3 puzzle cube from 27 individual cubelets.
+             */
+            addPuzzleCube() {
+                this.cube = new THREE.Group();
+                
+                const numFragmentsPerAxis = 3; // 3x3x3 cube
+                const fragmentSize = 1.2; // Size of each cubelet
+                const gap = 0.1; // Gap between cubelets to create seams
+                const totalPieceSize = fragmentSize + gap;
+                const totalSize = totalPieceSize * numFragmentsPerAxis;
+                const offset = totalSize / 2 - totalPieceSize / 2;
+
+                const emissiveMap = this.createEmissiveMap();
+
+                // Create one material to share between all cubelets
+                const material = new THREE.MeshStandardMaterial({
+                    color: 0x222222, // Dark metallic base
+                    metalness: 0.9,
+                    roughness: 0.4,
+                    
+                    emissive: 0x00ffff,
+                    emissiveMap: emissiveMap,
+                    emissiveIntensity: 1.5,
+                });
+
+                // Create one geometry to share
+                const geometry = new THREE.BoxGeometry(fragmentSize, fragmentSize, fragmentSize);
+
+                for (let x = 0; x < numFragmentsPerAxis; x++) {
+                    for (let y = 0; y < numFragmentsPerAxis; y++) {
+                        for (let z = 0; z < numFragmentsPerAxis; z++) {
+                            const fragment = new THREE.Mesh(geometry, material);
+
+                            // Calculate and set the position for this fragment
+                            fragment.position.set(
+                                x * totalPieceSize - offset,
+                                y * totalPieceSize - offset,
+                                z * totalPieceSize - offset
+                            );
+
+                            this.cube.add(fragment);
+                        }
+                    }
+                }
+                
+                this.scene.add(this.cube);
+            }
+
+            /**
+             * Creates a CanvasTexture with glowing cracks.
+             */
+            createEmissiveMap() {
+                const canvas = document.createElement('canvas');
+                const size = 256;
+                canvas.width = size;
+                canvas.height = size;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = 'black';
+                ctx.fillRect(0, 0, size, size);
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 8;
+                for (let i = 0; i < 5; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(Math.random() * size, Math.random() * size);
+                    ctx.lineTo(Math.random() * size, Math.random() * size);
+                    ctx.stroke();
+                }
+                return new THREE.CanvasTexture(canvas);
+            }
+
+            addEventListeners() {
+                window.addEventListener('resize', this.onResize.bind(this));
+                window.addEventListener('mousemove', this.onMouseMove.bind(this));
+            }
+
+            onResize() {
+                this.camera.aspect = window.innerWidth / window.innerHeight;
+                this.camera.updateProjectionMatrix();
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+
+            onMouseMove(event) {
+                // Normalized device coordinates (-1 to +1)
+                this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            }
+
+            animate() {
+                const delta = this.clock.getDelta();
+
+                if (this.cube) {
+                    // Constant slow rotation
+                    this.cube.rotation.y += 0.1 * delta; 
+                    
+                    // Subtle mouse-follow rotation
+                    // We lerp towards the mouse position
+                    this.cube.rotation.x = THREE.MathUtils.lerp(this.cube.rotation.x, this.mouse.y * 0.2, 0.05);
+                    this.cube.rotation.z = THREE.MathUtils.lerp(this.cube.rotation.z, -this.mouse.x * 0.2, 0.05);
+                }
+
+                this.renderer.render(this.scene, this.camera);
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            new World();
+        });
+
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hacked Glitch 3D Object</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden; /* Prevent scrollbars */
+            background-color: #05050A; /* Deep dark background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        canvas {
+            display: block; /* Remove extra space below canvas */
+        }
+    </style>
+    <!-- Load Three.js library and Post-processing effects. Using official Three.js examples path for reliability. --><script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- Post-processing Libraries --><script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    
+    <!-- Shaders --><script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/VignetteShader.js"></script>
+    <!-- Dependencies for UnrealBloomPass --><script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+
+    
+    <!-- Required for UnrealBloomPass --><script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/UnrealBloomShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script> 
+    
+    <!-- Glitch Pass dependencies --><script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/DigitalGlitch.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/GlitchPass.js"></script>
+</head>
+<body>
+    <canvas id="three-canvas"></canvas>
+
+    <script>
+        let scene, camera, renderer, complexObject, composer, meshObject, glitchPass; // Added glitchPass to global scope
+        let ambientLight, pointLight, secondaryLight;
+
+        function hueToColor(h) {
+            h /= 60;
+            let i = Math.floor(h);
+            let f = h - i;
+            let p = 0;
+            let q = 1 - f;
+            let t = f;
+            let r, g, b;
+
+            switch (i) {
+                case 0: r = 1; g = t; b = p; break;
+                case 1: r = q; g = 1; b = p; break;
+                case 2: r = p; g = 1; b = t; break;
+                case 3: r = p; g = q; b = 1; break;
+                case 4: r = t; g = p; b = 1; break;
+                case 5: r = 1; g = p; b = q; break;
+            }
+            return new THREE.Color(r, g, b);
+        }
+
+        function initThreeJS() {
+            const canvas = document.getElementById('three-canvas');
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(70, width / height, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: false, antialias: true });
+            renderer.setSize(width, height);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setClearColor(0x05050A, 1);
+
+            ambientLight = new THREE.AmbientLight(0x404040, 2);
+            scene.add(ambientLight);
+
+            pointLight = new THREE.PointLight(0xFF00FF, 3, 100); // Increased intensity
+            pointLight.position.set(0, 0, 0); 
+            scene.add(pointLight);
+
+            secondaryLight = new THREE.PointLight(0x00FFFF, 2.5, 80); // Increased intensity
+            secondaryLight.position.set(5, 5, 5);
+            scene.add(secondaryLight);
+
+            const baseGeometry = new THREE.IcosahedronGeometry(4, 2); 
+            const wireframeGeometry = new THREE.WireframeGeometry(baseGeometry); 
+
+            const lineMaterial = new THREE.LineBasicMaterial({
+                color: 0xFFFFFF,
+                linewidth: 2,
+                transparent: true,
+                opacity: 0.8, // Slightly more opaque
+                emissive: 0x87CEFA,
+                emissiveIntensity: 0.7 // Increased intensity
+            });
+            complexObject = new THREE.LineSegments(wireframeGeometry, lineMaterial);
+            scene.add(complexObject);
+
+            const meshMaterial = new THREE.MeshStandardMaterial({
+                color: 0x1A0A33,
+                emissive: 0x00FFFF,
+                emissiveIntensity: 1.0, // Increased intensity
+                metalness: 0.9, // More metallic
+                roughness: 0.2, // Sharper reflections
+                transparent: true,
+                opacity: 0.4, // Slightly more opaque
+                side: THREE.DoubleSide
+            });
+            meshObject = new THREE.Mesh(baseGeometry, meshMaterial);
+            meshObject.scale.set(0.95, 0.95, 0.95); 
+            scene.add(meshObject);
+
+            camera.position.z = 15; 
+
+            composer = new THREE.EffectComposer(renderer);
+            composer.addPass(new THREE.RenderPass(scene, camera));
+
+            const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(width, height), 1.5, 0.4, 0.85); 
+            bloomPass.threshold = 0; 
+            bloomPass.strength = 1.8; // Increased bloom strength for more intense glow
+            bloomPass.radius = 0.8; // Increased radius
+            composer.addPass(bloomPass);
+
+            // Glitch Pass for aggressive distortion
+            glitchPass = new THREE.GlitchPass(); // Assign to global variable
+            glitchPass.goWild = false; // Start subtle
+            composer.addPass(glitchPass);
+
+            const vignettePass = new THREE.ShaderPass(THREE.VignetteShader);
+            vignettePass.uniforms["darkness"].value = 1.0; 
+            vignettePass.uniforms["offset"].value = 0.8; 
+            composer.addPass(vignettePass);
+
+            composer.addPass(new THREE.ShaderPass(THREE.CopyShader));
+
+            animate();
+        }
+
+        function animate(time) {
+            requestAnimationFrame(animate);
+            
+            if (!time) {
+                time = Date.now(); 
+            }
+
+            if (pointLight && secondaryLight && complexObject && meshObject) {
+                const speed = 0.0001; // Faster color shift
+                const hueA = (time * speed) % 360;
+                const hueB = (hueA + 120) % 360; // More contrasting color shift
+                const hueC = (hueA + 240) % 360; // Third hue for more digital feel
+
+                const colorA = hueToColor(hueA);
+                const colorB = hueToColor(hueB);
+                const colorC = hueToColor(hueC);
+                
+                if (pointLight.color && secondaryLight.color) {
+                    pointLight.color.copy(colorA);
+                    secondaryLight.color.copy(colorB);
+                }
+
+                if (complexObject.material.emissive && meshObject.material.emissive) {
+                    complexObject.material.emissive.copy(colorB); // Use color B for wireframe
+                    meshObject.material.emissive.copy(colorC); // Use color C for mesh
+                    complexObject.material.color.copy(colorA); // Wireframe base color
+                }
+
+                // More erratic movement
+                complexObject.rotation.x += Math.sin(time * 0.0001) * 0.01 + 0.005;
+                complexObject.rotation.y += Math.cos(time * 0.0001) * 0.01 + 0.008;
+                complexObject.rotation.z += Math.sin(time * 0.00008) * 0.01 + 0.006;
+
+                pointLight.position.x = Math.sin(Date.now() * 0.0007) * 3; // Faster, wider movement
+                pointLight.position.y = Math.cos(Date.now() * 0.0009) * 3;
+                secondaryLight.position.x = Math.cos(Date.now() * 0.0008) * -4;
+                secondaryLight.position.y = Math.sin(Date.now() * 0.0006) * -4;
+
+                // Randomly trigger aggressive glitches
+                if (glitchPass && Math.random() > 0.98) { // 2% chance per frame for a wild glitch
+                    glitchPass.goWild = true;
+                    // Reset after a very short time
+                    setTimeout(() => { glitchPass.goWild = false; }, 50); 
+                }
+            }
+            
+            if (composer) {
+                composer.render();
+            } else if (renderer) {
+                renderer.render(scene, camera);
+            }
+        }
+        
+        function onWindowResize() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            if (camera && renderer && composer) {
+                camera.aspect = width / height;
+                camera.updateProjectionMatrix();
+                renderer.setSize(width, height);
+                composer.setSize(width, height);
+            }
+        }
+
+        window.onload = function() {
+            initThreeJS();
+            window.addEventListener('resize', onWindowResize);
+            console.log("Hacked Glitch 3D Object initialized with aggressive RGB and glitch effects.");
+        };
+    </script>
+</body>
+</html>

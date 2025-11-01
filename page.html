@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subliminal Engineering - Careers</title>
+    <!-- Load Tailwind CSS --><script src="https://cdn.tailwindcss.com"></script>
+    <!-- Use a modern, futuristic font (Inter is a great default) --><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d0d12; /* Deep dark background */
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden; /* Hide horizontal overflow */
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+            
+            /* NEW: Adding subtle background patterns to body */
+            background-image: 
+                radial-gradient(circle at center, rgba(135, 206, 250, 0.05) 0%, transparent 70%), /* Subtle central glow */
+                linear-gradient(to bottom right, #0d0d12, #000000); /* Dark gradient for depth */
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+
+        /* Custom glow effect for cards and text */
+        .card-glow {
+            box-shadow: 0 0 15px rgba(135, 206, 250, 0.4), 0 0 5px rgba(135, 206, 250, 0.6); /* Subtle blue-cyan glow */
+            backdrop-filter: blur(5px);
+        }
+        
+        /* The main content area positioning */
+        .main-container {
+            width: 90%;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+            position: relative;
+            padding: 2rem 0;
+            z-index: 10;
+        }
+
+        /* The canvas container that holds the 3D model */
+        #three-canvas-container {
+            display: block !important; 
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px; /* Size for 3D object */
+            height: 400px; /* Size for 3D object */
+            z-index: 5;
+            pointer-events: none; /* Allows clicks to pass through to underlying elements */
+        }
+
+        /* Modal styling */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: none; /* Hidden by default */
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+        }
+
+        .modal-content {
+            background: #1a1a2e; /* Dark theme */
+            border: 2px solid #87CEFA;
+            padding: 2rem;
+            border-radius: 1rem;
+            max-width: 700px;
+            width: 90%;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Placeholder for complex background border/glyphs */
+        .forbidden-border {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            
+            /* NEW: Background image properties for the intricate frame */
+            background-image: url('path/to/your/ornate-frame.png'), url('path/to/your/subtle-circuitry.png'); /* Layer multiple images */
+            background-size: cover, 100px 100px; /* Cover for frame, repeat for circuitry */
+            background-position: center, 0 0;
+            background-repeat: no-repeat, repeat;
+            filter: brightness(0.7) contrast(1.2) drop-shadow(0 0 10px rgba(0,255,255,0.5)); /* Adds glow and intensity */
+        }
+    </style>
+    <!-- Load Three.js library for the 3D visual --><script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body class="text-white">
+
+    <!-- Subliminal Prompt Modal (LLM Feature Display) --><div id="prompt-modal" class="modal">
+        <div class="modal-content card-glow">
+            <h2 class="text-3xl font-bold text-cyan-400 mb-4 border-b border-cyan-400/50 pb-2">Synthesis Prompt: <span id="prompt-role"></span></h2>
+            <p id="prompt-text" class="text-lg text-gray-200 min-h-[50px]">
+                <!-- Prompt content or loading spinner goes here --></p>
+            <div class="text-right mt-6">
+                <button onclick="closeModal()" class="bg-gray-600 text-white py-2 px-6 rounded-full hover:bg-gray-500 transition">
+                    DISSOLVE (Close)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. Complex Background/Border (Placeholder) --><div class="forbidden-border">
+        <!-- The intricate, glyph-covered border seen in the Figma image would render here via CSS background-image --></div>
+
+    <div class="main-container">
+
+        <!-- Header --><header class="text-center mb-16 relative z-20">
+            <h1 class="text-5xl font-bold tracking-widest text-white">Subliminal Engineering</h1>
+            <p class="text-xl mt-2 text-cyan-400 opacity-80">Weaving New Paradigms</p>
+        </header>
+
+        <!-- The Central 3D Visual Container --><div id="three-canvas-container">
+            <canvas id="three-canvas" class="w-full h-full"></canvas>
+            <!-- Three.js object renders here --></div>
+        
+        <!-- Job Cards Layout --><div class="relative w-full h-auto min-h-[500px] flex items-center justify-center">
+
+            <!-- SVG Container for Connector Lines --><svg id="connector-svg" class="absolute inset-0 w-full h-full z-10" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid slice">
+                <!-- SVG paths for glowing lines will be dynamically inserted here --></svg>
+
+            <!-- Card Grid: Uses controlled gaps to center the 3D element --><div class="grid grid-cols-2 gap-x-64 gap-y-48 relative z-20 mx-auto">
+                <!-- Top Left --><div id="card-tl" class="w-full max-w-sm p-6 rounded-xl border border-cyan-500/30 bg-black/50 card-glow hover:bg-black/70 transition duration-300">
+                    <h3 class="text-xl font-bold text-cyan-400 mb-2">Conceptual Architects</h3>
+                    <p class="text-sm text-gray-400 mb-4">You design reality structures in hyper-dimensional space. The limits of human comprehension are merely starting points.</p>
+                    <div class="space-y-2 mt-4">
+                        <button onclick="synthesizePrompt('Conceptual Architects')" class="text-sm border border-pink-500 text-pink-300 py-1 px-4 rounded-full w-full hover:bg-pink-900/50 transition">
+                            ✨ Generate Synthesis Prompt
+                        </button>
+                        <a href="#" class="block text-center text-sm border border-white/50 text-white py-1 px-4 rounded-full hover:bg-white hover:text-black transition">
+                            APPLY & ASCEND
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Top Right --><div id="card-tr" class="w-full max-w-sm p-6 rounded-xl border border-cyan-500/30 bg-black/50 card-glow hover:bg-black/70 transition duration-300">
+                    <h3 class="text-xl font-bold text-cyan-400 mb-2">Pattern Integrators</h3>
+                    <p class="text-sm text-gray-400 mb-4">You find the hidden constants across all fractured realities, integrating them into a singular, forbidden truth.</p>
+                    <div class="space-y-2 mt-4">
+                        <button onclick="synthesizePrompt('Pattern Integrators')" class="text-sm border border-pink-500 text-pink-300 py-1 px-4 rounded-full w-full hover:bg-pink-900/50 transition">
+                            ✨ Generate Synthesis Prompt
+                        </button>
+                        <a href="#" class="block text-center text-sm border border-white/50 text-white py-1 px-4 rounded-full hover:bg-white hover:text-black transition">
+                            APPLY & ASCEND
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Bottom Left --><div id="card-bl" class="w-full max-w-sm p-6 rounded-xl border border-cyan-500/30 bg-black/50 card-glow hover:bg-black/70 transition duration-300">
+                    <h3 class="text-xl font-bold text-cyan-400 mb-2">Form Alchemists</h3>
+                    <p class="text-sm text-gray-400 mb-4">You manipulate the fabric of matter itself, transmuting raw thought into tangible, non-Euclidean structures.</p>
+                    <div class="space-y-2 mt-4">
+                        <button onclick="synthesizePrompt('Form Alchemists')" class="text-sm border border-pink-500 text-pink-300 py-1 px-4 rounded-full w-full hover:bg-pink-900/50 transition">
+                            ✨ Generate Synthesis Prompt
+                        </button>
+                        <a href="#" class="block text-center text-sm border border-white/50 text-white py-1 px-4 rounded-full hover:bg-white hover:text-black transition">
+                            APPLY & ASCEND
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Bottom Right --><div id="card-br" class="w-full max-w-sm p-6 rounded-xl border border-cyan-500/30 bg-black/50 card-glow hover:bg-black/70 transition duration-300">
+                    <h3 class="text-xl font-bold text-cyan-400 mb-2">Cognitive Fabricators</h3>
+                    <p class="text-sm text-gray-400 mb-4">You are responsible for generating, testing, and propagating disruptive ideas that dismantle obsolete conceptual frameworks.</p>
+                    <div class="space-y-2 mt-4">
+                        <button onclick="synthesizePrompt('Cognitive Fabricators')" class="text-sm border border-pink-500 text-pink-300 py-1 px-4 rounded-full w-full hover:bg-pink-900/50 transition">
+                            ✨ Generate Synthesis Prompt
+                        </button>
+                        <a href="#" class="block text-center text-sm border border-white/50 text-white py-1 px-4 rounded-full hover:bg-white hover:text-black transition">
+                            APPLY & ASCEND
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Call to Action --><footer class="text-center mt-16 relative z-20">
+            <h2 class="text-2xl font-semibold mb-4 text-white">How To Join The Collective</h2>
+            <ol class="text-gray-400 list-none mb-6 space-y-1">
+                <li>1. SUBMIT CHRONO-PORTFOLIO</li>
+                <li>2. CONVERGE MENTALITY (Interview)</li>
+                <li>3. SYNTHESIZE & TRANSCEND</li>
+            </ol>
+            <button class="bg-cyan-600 text-black py-3 px-10 rounded-full text-lg font-bold hover:bg-cyan-500 transition card-glow">
+                APPLY NOW
+            </button>
+        </footer>
+
+    </div>
+
+    <script>
+        // --- GEMINI API & UTILITIES ---
+        const apiKey = ""; // API key is handled by the environment
+        const modelName = 'gemini-2.5-flash-preview-09-2025';
+
+        // Utility function to fetch content with exponential backoff
+        async function fetchWithRetry(url, options, retries = 3) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.ok) {
+                        return response;
+                    }
+                    if (response.status === 429 && i < retries - 1) { // Too Many Requests
+                        const delay = Math.pow(2, i) * 1000;
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        continue;
+                    }
+                    throw new Error(`API request failed with status ${response.status}`);
+                } catch (error) {
+                    if (i === retries - 1) throw error;
+                    const delay = Math.pow(2, i) * 1000;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
+        }
+        
+        // Function to generate the synthesis prompt using Gemini
+        async function generateSynthesizedPrompt(role) {
+            const modal = document.getElementById('prompt-modal');
+            const promptText = document.getElementById('prompt-text');
+            const promptRole = document.getElementById('prompt-role');
+            
+            promptRole.textContent = role;
+            promptText.innerHTML = '<span class="text-cyan-400">Processing forbidden computation...</span>';
+            modal.style.display = 'flex'; // Show modal
+
+            const systemPrompt = `You are the architect of a collective dedicated to "Subliminal Engineering" and "forbidden designs." Your goal is to screen applicants who can think beyond human boundaries. Write a single, highly abstract, non-linear, and challenging philosophical or conceptual question (the Synthesis Prompt) tailored to the job role provided. The question must sound like it is testing for a transcendental understanding of reality, not practical skills. Do not include any introductory phrases like 'The question is' or 'Here is your prompt'.`;
+
+            const userQuery = `Generate the Synthesis Prompt for the role: ${role}.`;
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+            };
+
+            try {
+                const response = await fetchWithRetry(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await response.json();
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (text) {
+                    promptText.textContent = text;
+                } else {
+                    promptText.textContent = 'ERROR: Failed to synthesize. Conceptual overload detected.';
+                    console.error('Gemini API response missing text:', result);
+                }
+
+            } catch (error) {
+                promptText.textContent = `ERROR: Connection to the Collective failed. Try again. (${error.message})`;
+                console.error('Error generating prompt:', error);
+            }
+        }
+
+        // Modal close function
+        function closeModal() {
+            document.getElementById('prompt-modal').style.display = 'none';
+        }
+
+
+        // --- THREE.JS VISUALIZATION LOGIC ---
+
+        let scene, camera, renderer, complexObject;
+
+        function initThreeJS() {
+            const container = document.getElementById('three-canvas-container');
+            const canvas = document.getElementById('three-canvas');
+            if (!canvas || !container) return;
+
+            // 1. Setup Scene, Camera, Renderer
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true }); // Alpha true makes the background transparent
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio); 
+
+            // 2. Create the Central Abstract Object
+            const geometry = new THREE.BufferGeometry();
+            const positions = [];
+            const segments = 1000;
+            const radius = 5;
+
+            // Create a randomized, flowing line structure
+            for (let i = 0; i < segments; i++) {
+                const t = i / segments;
+                const x = radius * Math.cos(t * 20) + Math.random() * 0.5 - 0.25;
+                const y = radius * Math.sin(t * 20) + Math.random() * 0.5 - 0.25;
+                const z = radius * Math.sin(t * 15) * Math.cos(t * 10) + Math.random() * 0.5 - 0.25;
+                positions.push(x, y, z);
+            }
+
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            
+            // Material: Cyan/Pink gradient glow (Emissive and basic line)
+            const material = new THREE.LineBasicMaterial({ 
+                color: 0x87CEFA, // Cyan base color
+                linewidth: 2, 
+                transparent: true, 
+                opacity: 0.8
+            });
+
+            complexObject = new THREE.Line(geometry, material);
+            scene.add(complexObject);
+            
+            // Add a central light source for internal glow
+            const light = new THREE.PointLight(0xFF00FF, 1.5, 50); // Magenta/Pink light
+            light.position.set(0, 0, 0);
+            scene.add(light);
+            
+            camera.position.z = 10;
+
+            // Start animation
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (complexObject) {
+                complexObject.rotation.x += 0.003;
+                complexObject.rotation.y += 0.005;
+                complexObject.rotation.z += 0.004;
+            }
+            renderer.render(scene, camera);
+        }
+        
+        function onWindowResize() {
+            const container = document.getElementById('three-canvas-container');
+            if (container && camera) {
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            }
+            drawConnectors();
+        }
+
+        // --- SVG CONNECTOR LOGIC ---
+
+        function drawConnectors() {
+            const svg = document.getElementById('connector-svg');
+            const mainContainer = document.querySelector('.main-container');
+            
+            if (!svg || !mainContainer) return;
+            
+            // Clear existing paths
+            svg.innerHTML = '';
+
+            const rect = mainContainer.getBoundingClientRect();
+            
+            // Fixed viewBox dimensions based on current layout gaps
+            const svgWidth = 1000;
+            const svgHeight = 500; 
+
+            // Center of the 3D visual (relative to SVG container, 500, 250)
+            const center3D = {
+                x: svgWidth / 2, // 500
+                y: svgHeight / 2 // 250
+            };
+
+            const cardIds = ['card-tl', 'card-tr', 'card-bl', 'card-br'];
+            
+            const lineStroke = '#87CEFA'; // Cyan
+            const lineThickness = 2;
+
+            cardIds.forEach(id => {
+                const card = document.getElementById(id);
+                if (!card) return;
+
+                const cardRect = card.getBoundingClientRect();
+
+                // Calculate connection point on the card (relative to SVG container)
+                // We use the entire document's scroll position for the calculation
+                let cardX, cardY;
+                let isLeft = id.includes('tl') || id.includes('bl');
+
+                // X-coordinate: Right edge for left cards, left edge for right cards
+                if (isLeft) {
+                    cardX = (cardRect.right - rect.left) - 10; 
+                } else {
+                    cardX = (cardRect.left - rect.left) + 10; 
+                }
+                
+                // Y-coordinate: Center of the card
+                cardY = (cardRect.top + cardRect.height / 2 - rect.top);
+
+                
+                // Draw a curved line (Bézier curve)
+                const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                
+                let ctrl1X, ctrl1Y, ctrl2X, ctrl2Y;
+                const curvePull = 120; // Distance to pull the curve
+
+                // Control points to create the "pull" towards the center
+                if (isLeft) {
+                    ctrl1X = cardX + curvePull;
+                    ctrl1Y = cardY;
+                    ctrl2X = center3D.x - curvePull;
+                    ctrl2Y = center3D.y;
+                } else {
+                    ctrl1X = cardX - curvePull;
+                    ctrl1Y = cardY;
+                    ctrl2X = center3D.x + curvePull;
+                    ctrl2Y = center3D.y;
+                }
+
+                // Fine-tune vertical position of the control points to better guide the line
+                if (id.includes('tl')) { ctrl2Y -= 50; } 
+                if (id.includes('tr')) { ctrl2Y -= 50; } 
+                if (id.includes('bl')) { ctrl2Y += 50; } 
+                if (id.includes('br')) { ctrl2Y += 50; } 
+
+
+                path.setAttribute('d', `M ${cardX} ${cardY} C ${ctrl1X} ${ctrl1Y}, ${ctrl2X} ${ctrl2Y}, ${center3D.x} ${center3D.y}`);
+                path.setAttribute('stroke', lineStroke);
+                path.setAttribute('stroke-width', lineThickness);
+                path.setAttribute('fill', 'none');
+                
+                // Add filter for subtle glow
+                path.setAttribute('style', 'filter:drop-shadow(0 0 5px #87CEFA);');
+
+                svg.appendChild(path);
+            });
+        }
+
+
+        // Initialize the components when the window loads
+        window.onload = function() {
+            initThreeJS();
+            // Wait briefly for the layout to settle before drawing the lines
+            setTimeout(drawConnectors, 100); 
+            window.addEventListener('resize', onWindowResize);
+            console.log("Subliminal Engineering interface initialized. 3D visualization and connectors restored.");
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extraterrestrial Killer 3D Object</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden; /* Prevent scrollbars */
+            background-color: #05050A; /* Even deeper dark background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        canvas {
+            display: block; /* Remove extra space below canvas */
+        }
+    </style>
+    <!-- Load Three.js library and Post-processing effects. Using official Three.js examples path for reliability. -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- Post-processing Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    
+    <!-- Shaders -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/VignetteShader.js"></script>
+    <!-- FIX: Added LuminosityHighPassShader.js as a dependency for UnrealBloomPass -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+
+    
+    <!-- Required for UnrealBloomPass -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/UnrealBloomShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script> 
+    
+    <!-- Glitch Pass dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/DigitalGlitch.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/GlitchPass.js"></script>
+</head>
+<body>
+    <canvas id="three-canvas"></canvas>
+
+    <script>
+        let scene, camera, renderer, complexObject, composer;
+        let ambientLight, pointLight, secondaryLight; // Declare all lights globally
+
+        function initThreeJS() {
+            const canvas = document.getElementById('three-canvas');
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            // 1. Scene Setup
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(70, width / height, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: false, antialias: true }); // Alpha false for solid background
+            renderer.setSize(width, height);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setClearColor(0x05050A, 1); // Ensure renderer background matches body
+
+            // 2. Lighting for dramatic effect
+            ambientLight = new THREE.AmbientLight(0x404040, 2); // Soft ambient light, more intense
+            scene.add(ambientLight);
+
+            pointLight = new THREE.PointLight(0x00FFFF, 2, 100); // Cyan light source
+            pointLight.position.set(0, 0, 0); // From the center of the object
+            scene.add(pointLight);
+
+            secondaryLight = new THREE.PointLight(0xFF00FF, 1.5, 80); // Magenta light source
+            secondaryLight.position.set(5, 5, 5);
+            scene.add(secondaryLight);
+
+            // 3. Create a More Complex and Alien-looking Object
+            // Base geometry: Icosahedron for more organic complexity
+            const baseGeometry = new THREE.IcosahedronGeometry(4, 2); // Radius 4, detail 2
+
+            // Create a wireframe from the base geometry
+            const wireframeGeometry = new THREE.WireframeGeometry(baseGeometry);
+            const lineMaterial = new THREE.LineBasicMaterial({
+                color: 0x87CEFA, // Cyan lines
+                linewidth: 2,
+                transparent: true,
+                opacity: 0.7,
+                emissive: 0x87CEFA, // Lines emit light
+                emissiveIntensity: 0.5
+            });
+            complexObject = new THREE.LineSegments(wireframeGeometry, lineMaterial);
+            scene.add(complexObject);
+
+            // Add a subtle mesh inside for more body
+            const meshMaterial = new THREE.MeshStandardMaterial({
+                color: 0x1A0A33, // Dark purplish
+                emissive: 0x00FFFF, // Emits cyan light
+                emissiveIntensity: 0.8, // Stronger glow
+                metalness: 0.8,
+                roughness: 0.3,
+                transparent: true,
+                opacity: 0.3,
+                side: THREE.DoubleSide
+            });
+            const meshObject = new THREE.Mesh(baseGeometry, meshMaterial);
+            meshObject.scale.set(0.95, 0.95, 0.95); // Slightly smaller inside wireframe
+            scene.add(meshObject);
+
+
+            camera.position.z = 15; // Pull camera back slightly
+
+            // 4. Post-processing for "Killer Look" (Bloom, Glitch, Vignette)
+            composer = new THREE.EffectComposer(renderer);
+            composer.addPass(new THREE.RenderPass(scene, camera));
+
+            // Unreal Bloom Pass
+            // The constructor is THREE.UnrealBloomPass(resolution, strength, radius, threshold)
+            const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(width, height), 1.5, 0.4, 0.85); 
+            bloomPass.threshold = 0; 
+            bloomPass.strength = 1.2; 
+            bloomPass.radius = 0.5; 
+            composer.addPass(bloomPass);
+
+            // Glitch Pass for subtle distortion and "forbidden tech" feel
+            const glitchPass = new THREE.GlitchPass(64); // Higher number = less frequent glitch
+            glitchPass.goWild = false; // Keep it subtle
+            composer.addPass(glitchPass);
+
+            // Vignette Pass for cinematic focus
+            const vignettePass = new THREE.ShaderPass(THREE.VignetteShader);
+            vignettePass.uniforms["darkness"].value = 1.0; 
+            vignettePass.uniforms["offset"].value = 0.8; 
+            composer.addPass(vignettePass);
+
+            // Final Copy Pass (needed to ensure the last pass is rendered to screen)
+            composer.addPass(new THREE.ShaderPass(THREE.CopyShader));
+
+
+            // Start animation
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (complexObject) {
+                complexObject.rotation.x += 0.005;
+                complexObject.rotation.y += 0.008;
+                complexObject.rotation.z += 0.006;
+
+                // Make lights follow a subtle, alien movement
+                pointLight.position.x = Math.sin(Date.now() * 0.0005) * 2;
+                pointLight.position.y = Math.cos(Date.now() * 0.0007) * 2;
+                secondaryLight.position.x = Math.cos(Date.now() * 0.0006) * -3;
+                secondaryLight.position.y = Math.sin(Date.now() * 0.0004) * -3;
+            }
+            
+            // Render using the composer for post-processing effects
+            if (composer) {
+                composer.render();
+            } else {
+                renderer.render(scene, camera);
+            }
+        }
+        
+        function onWindowResize() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            if (camera && renderer && composer) {
+                camera.aspect = width / height;
+                camera.updateProjectionMatrix();
+                renderer.setSize(width, height);
+                composer.setSize(width, height); // Update composer size too
+            }
+        }
+
+        // Initialize the components when the window loads
+        window.onload = function() {
+            initThreeJS();
+            window.addEventListener('resize', onWindowResize);
+            console.log("Extraterrestrial Killer 3D Object initialized with post-processing.");
+        };
+    </script>
+</body>
+</html>
